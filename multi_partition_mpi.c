@@ -7,6 +7,7 @@
 #include "mpi.h"
 #include "verifica_particoes.h"
 #include "chrono.h"
+#define NTIMES 10
 
 int nTotalElements;
 int nP;
@@ -39,6 +40,16 @@ int compare(const void *a, const void *b)
     return 0;
 }
 
+void print_array_long_long(long long *arr, int n)
+{
+    int i;
+    for (i = 0; i < n; i++)
+    {
+        printf("%lld ", arr[i]);
+    }
+    printf("\n");
+}
+
 int bsearch_lower_bound(long long *input, int left, int right, long long x)
 {
     while (left < right)
@@ -53,13 +64,43 @@ int bsearch_lower_bound(long long *input, int left, int right, long long x)
 }
 
 void multi_partition_mpi( long long *Input, int n, long long *P, int np, long long *Output, int *nO) {
-    int *processPos = (int *)calloc(nP, sizeof(int));
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    int *processPos = (int *)calloc(np, sizeof(int));
+    int nTotal = n * np;
+    long long *processResult = malloc(sizeof(long long) * nTotal);
+
+    for (int i = 0; i < np; i++) 
+        for (int j = 0; j < n; j++) 
+            processResult[i * n + j] = NULL;
+
+    long long *received = malloc(sizeof(long long) * nTotal);
+
+    for (int i = 0; i < np; i++) 
+        processPos[i] = 0;
 
     for (int i = 0; i < n; i++) {
-        int posL = bsearch_lower_bound(P, 0, nP, Input[i]);
-        
+        int posL = bsearch_lower_bound(P, 0, np, Input[i]);
+        processResult[posL * n + processPos[posL]] = Input[i];
+        processPos[posL]++;
     }
+
+    MPI_Alltoall(processPos, n, MPI_LONG_LONG, received, n, MPI_LONG_LONG, MPI_COMM_WORLD);
+
+    int tamOutput = 0;
+    for (int i = 0; i < nTotal; i++) {
+        if (received[i] != -1) {
+            Output[tamOutput] = received[i];
+            tamOutput++;
+        }
+    }
+    *nO = tamOutput;
+
     free(processPos);
+    free(processResult);
+    free(received);
+    MPI_Barrier(MPI_COMM_WORLD);
 }
 
 int main(int argc, char *argv[]) {
@@ -82,13 +123,13 @@ int main(int argc, char *argv[]) {
         }
     }
     long long *Input, *P, *Output;
-    int n, nO, processId;
+    int n, nO, rank;
 
     MPI_Init(&argc, &argv);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
-    MPI_Comm_rank(MPI_COMM_WORLD, &processId);
+    MPI_Comm_size(MPI_COMM_WORLD, &nP);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    srand(2024 * 100 + processId);
+    srand(2024 * 100 + rank);
     
     n = nTotalElements / nP;
 
@@ -109,21 +150,57 @@ int main(int argc, char *argv[]) {
 
     geraNaleatorios(Input, n);
 
-    if (processId == 0) {
+    if (rank == 0) {
         geraNaleatorios(P, nP);
         qsort(P, nP-1, sizeof(long long), compare);
         P[nP-1] = LLONG_MAX;
     }
 
     MPI_Bcast(P, nP, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
-
     
+    if (debug) {
+        printf("Input array: ");
+        print_array_long_long(Input, n);
+
+        printf("Partition array: ");
+        print_array_long_long(P, nP);
+        printf("\n");
+    }
+
     Output = malloc(sizeof(long long) * nP * n);
 
-    multi_partition_mpi(Input, n, P, nP, Output, &nO); 
-    
+    chronometer_t ptTime;
+    chrono_reset(&ptTime);
+    chrono_start(&ptTime);
+    for (int i = 0; i < NTIMES; i++) {
+        multi_partition_mpi(Input, n, P, nP, Output, &nO); 
+    }
+
+    if (debug) {
+        printf("Processo %d output array: ", rank);
+        print_array_long_long(output, nO);
+        printf("\n");
+    }
+
+    chrono_stop(&ptTime);
+
+    double total_time_in_seconds = ((double) chrono_gettotal(&parallelPartitionTime)) / (1000 * 1000 * 1000);
+    printf("Total time: %lf s\n", total_time_in_seconds);
+    double average_time = total_time_in_seconds / (NTIMES);
+    printf("Average time: %lf s\n", average_time);
+                                  
+    double eps = n * NTIMES / total_time_in_seconds;
+    double megaeps = eps/1000000;
+    printf("Throughput: %lf MEPS/s\n", megaeps);
+
+    if (verify) {
+        verifica_particoes(Input, n, P, nP, Output, &nO);
+    }
+
     free(Input);
     free(P);
     free(Output);
+
+    MPI_Finalize();
     return 0;
 }
