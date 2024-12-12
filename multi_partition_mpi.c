@@ -104,11 +104,19 @@ int main(int argc, char *argv[]) {
     {
         fprintf(stderr, "Erro ao alocar memória para P\n");
         free(Input);    
-        return 1;
+        return 1; 
     }
 
     geraNaleatorios(Input, n);
-    geraNaleatorios(P, nP);
+
+    if (processId == 0) {
+        geraNaleatorios(P, nP);
+        qsort(P, nP-1, sizeof(long long), compare);
+        P[nP-1] = LLONG_MAX;
+    }
+
+    MPI_Bcast(P, nP, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+
     
     Output = malloc(sizeof(long long) * nP * n);
 
