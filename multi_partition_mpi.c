@@ -73,7 +73,7 @@ void multi_partition_mpi( long long *Input, int n, long long *P, int np, long lo
 
     for (int i = 0; i < np; i++) 
         for (int j = 0; j < n; j++) 
-            processResult[i * n + j] = NULL;
+            processResult[i * n + j] = -1;
 
     long long *received = malloc(sizeof(long long) * nTotal);
 
@@ -184,7 +184,8 @@ int main(int argc, char *argv[]) {
 
     chrono_stop(&ptTime);
 
-    double total_time_in_seconds = ((double) chrono_gettotal(&ptTime)) / (1000 * 1000 * 1000);
+    double total_time_in_nanoseconds = (double) chrono_gettotal(&parallelPartitionTime);
+    double total_time_in_seconds = total_time_in_nanoseconds / (1000 * 1000 * 1000);
     printf("Total time: %lf s\n", total_time_in_seconds);
     double average_time = total_time_in_seconds / (NTIMES);
     printf("Average time: %lf s\n", average_time);
