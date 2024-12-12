@@ -178,13 +178,13 @@ int main(int argc, char *argv[]) {
 
     if (debug) {
         printf("Processo %d output array: ", rank);
-        print_array_long_long(output, nO);
+        print_array_long_long(Output, nO);
         printf("\n");
     }
 
     chrono_stop(&ptTime);
 
-    double total_time_in_seconds = ((double) chrono_gettotal(&parallelPartitionTime)) / (1000 * 1000 * 1000);
+    double total_time_in_seconds = ((double) chrono_gettotal(&ptTime)) / (1000 * 1000 * 1000);
     printf("Total time: %lf s\n", total_time_in_seconds);
     double average_time = total_time_in_seconds / (NTIMES);
     printf("Average time: %lf s\n", average_time);
