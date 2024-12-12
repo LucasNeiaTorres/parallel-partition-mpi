@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
 
     chrono_stop(&ptTime);
 
-    double total_time_in_nanoseconds = (double) chrono_gettotal(&parallelPartitionTime);
+    double total_time_in_nanoseconds = (double) chrono_gettotal(&ptTime);
     double total_time_in_seconds = total_time_in_nanoseconds / (1000 * 1000 * 1000);
     printf("Total time: %lf s\n", total_time_in_seconds);
     double average_time = total_time_in_seconds / (NTIMES);
