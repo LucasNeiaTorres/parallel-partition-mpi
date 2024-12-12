@@ -129,6 +129,7 @@ int main(int argc, char *argv[]) {
     MPI_Comm_size(MPI_COMM_WORLD, &nP);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+    nTotalElements = atoi(argv[1]);
     srand(2024 * 100 + rank);
     
     n = nTotalElements / nP;
@@ -184,8 +185,7 @@ int main(int argc, char *argv[]) {
 
     chrono_stop(&ptTime);
 
-    double total_time_in_nanoseconds = (double) chrono_gettotal(&ptTime);
-    double total_time_in_seconds = total_time_in_nanoseconds / (1000 * 1000 * 1000);
+    double total_time_in_seconds = ((double) chrono_gettotal(&ptTime)) / (1000 * 1000 * 1000);
     printf("Total time: %lf s\n", total_time_in_seconds);
     double average_time = total_time_in_seconds / (NTIMES);
     printf("Average time: %lf s\n", average_time);
