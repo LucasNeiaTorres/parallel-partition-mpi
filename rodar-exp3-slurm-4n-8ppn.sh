@@ -31,7 +31,7 @@ echo "MAX_EXECS " $MAX_EXECS
         then 
             # Run the MPI program
             outuput=$(mpirun -np 8 ./multi_partition_mpi 8000000)
-            tempo=$(echo $outuput | awk '/Total time:/ {print $3}')
+            tempo=$(echo $outuput | grep "Total time:" | awk '{print $3}')
             echo "$outuput " >> output.txt
             echo "$tempo " >> saida.txt
             echo "$tempo "
