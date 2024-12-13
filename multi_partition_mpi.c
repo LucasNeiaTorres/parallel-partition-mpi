@@ -93,7 +93,7 @@ void multi_partition_mpi( long long *Input, int n, long long *P, int np, long lo
     printf("print dps do for 3: %d\n", nTotal);
 
 
-    MPI_Alltoall(processPos, n, MPI_LONG_LONG, received, n, MPI_LONG_LONG, MPI_COMM_WORLD);
+    MPI_Alltoall(processResult, n, MPI_LONG_LONG, received, n, MPI_LONG_LONG, MPI_COMM_WORLD);
 
     printf("print dps do all to all: %d\n", nTotal);
 
