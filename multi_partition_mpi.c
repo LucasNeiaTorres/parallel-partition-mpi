@@ -200,14 +200,17 @@ int main(int argc, char *argv[]) {
 
     chrono_stop(&ptTime);
 
-    double total_time_in_seconds = ((double) chrono_gettotal(&ptTime)) / (1000 * 1000 * 1000);
-    printf("Total time: %lf s\n", total_time_in_seconds);
-    double average_time = total_time_in_seconds / (NTIMES);
-    printf("Average time: %lf s\n", average_time);
-                                  
-    double eps = n * NTIMES / total_time_in_seconds;
-    double megaeps = eps/1000000;
-    printf("Throughput: %lf MEPS/s\n", megaeps);
+    if (processId == 0) {
+        double total_time_in_nanoseconds = (double) chrono_gettotal(&parallelPartitionTime);
+        double total_time_in_seconds = total_time_in_nanoseconds / (1000 * 1000 * 1000);
+        printf("Total time: %lf s\n", total_time_in_seconds);
+        double average_time = total_time_in_seconds / (NTIMES);
+        printf("Average time: %lf s\n", average_time);
+                                    
+        double eps = nTotalElements * NTIMES / total_time_in_seconds;
+        double megaeps = eps/1000000;
+        printf("Throughput: %lf MEPS/s\n", megaeps);
+    }
 
     if (verify) {
         verifica_particoes(Input, n, P, nP, Output, &nO);
