@@ -1,0 +1,6 @@
+./rodar-exp1-slurm-1n-8ppn.sh rodando no host  hostname
+ 
+ 
+ 
+ 
+ 
