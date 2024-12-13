@@ -134,8 +134,6 @@ int main(int argc, char *argv[]) {
     
     nTotalElements = atoi(argv[1]);
     n = nTotalElements / nP;
-    printf("nTotalElements: %d\n", nTotalElements);
-    printf("n: %d\n", n);
 
     Input = (long long *) malloc(n * sizeof(long long));
     if (Input == NULL)
