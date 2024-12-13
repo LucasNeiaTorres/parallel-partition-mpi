@@ -69,22 +69,29 @@ void multi_partition_mpi( long long *Input, int n, long long *P, int np, long lo
 
     int *processPos = (int *)calloc(np, sizeof(int));
     int nTotal = n * np;
+    printf("nTotal: %d\n", nTotal);
     long long *processResult = malloc(sizeof(long long) * nTotal);
 
     for (int i = 0; i < np; i++) 
         for (int j = 0; j < n; j++) 
             processResult[i * n + j] = -1;
+    printf("print dps do for 1: %d\n", nTotal);
 
     long long *received = malloc(sizeof(long long) * nTotal);
 
     for (int i = 0; i < np; i++) 
         processPos[i] = 0;
+    printf("print dps do for 2: %d\n", nTotal);
+
 
     for (int i = 0; i < n; i++) {
         int posL = bsearch_lower_bound(P, 0, np, Input[i]);
         processResult[posL * n + processPos[posL]] = Input[i];
         processPos[posL]++;
     }
+
+    printf("print dps do for 3: %d\n", nTotal);
+
 
     MPI_Alltoall(processPos, n, MPI_LONG_LONG, received, n, MPI_LONG_LONG, MPI_COMM_WORLD);
 
@@ -95,6 +102,8 @@ void multi_partition_mpi( long long *Input, int n, long long *P, int np, long lo
             tamOutput++;
         }
     }
+    printf("print dps do for 4: %d\n", nTotal);
+
     *nO = tamOutput;
 
     free(processPos);
