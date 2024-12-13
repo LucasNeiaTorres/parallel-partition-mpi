@@ -63,46 +63,60 @@ int bsearch_lower_bound(long long *input, int left, int right, long long x)
     return left;
 }
 
-void multi_partition_mpi( long long *Input, int n, long long *P, int np, long long *Output, int *nO) {
+void multi_partition_mpi(long long *Input, int n, long long *P, int np, long long *Output, int *nO) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    int *processPos = (int *)calloc(np, sizeof(int));
-    int nTotal = n * np;
-    long long *processResult = malloc(sizeof(long long) * nTotal);
+    int *sendCounts = calloc(np, sizeof(int)); // Contadores para cada partição
+    int *sendDispls = calloc(np, sizeof(int)); // Deslocamentos
+    int *recvCounts = calloc(np, sizeof(int)); // Contadores de recebimento
+    int *recvDispls = calloc(np, sizeof(int));
 
-    for (int i = 0; i < np; i++) 
-        for (int j = 0; j < n; j++) 
-            processResult[i * n + j] = -1;
+    // Determinar quantos elementos cada processo enviará para cada partição
+    for (int i = 0; i < n; i++) {
+        int pos = bsearch_lower_bound(P, 0, np, Input[i]);
+        sendCounts[pos]++;
+    }
 
-    long long *received = malloc(sizeof(long long) * nTotal);
+    // Calcular deslocamentos
+    sendDispls[0] = 0;
+    for (int i = 1; i < np; i++) {
+        sendDispls[i] = sendDispls[i - 1] + sendCounts[i - 1];
+    }
 
-    for (int i = 0; i < np; i++) 
-        processPos[i] = 0;
+    long long *sendBuffer = malloc(n * sizeof(long long));
+    for (int i = 0; i < np; i++) sendCounts[i] = 0;
 
     for (int i = 0; i < n; i++) {
-        int posL = bsearch_lower_bound(P, 0, np, Input[i]);
-        processResult[posL * n + processPos[posL]] = Input[i];
-        processPos[posL]++;
+        int pos = bsearch_lower_bound(P, 0, np, Input[i]);
+        sendBuffer[sendDispls[pos] + sendCounts[pos]] = Input[i];
+        sendCounts[pos]++;
     }
 
-    MPI_Alltoall(processResult, n, MPI_LONG_LONG, received, n, MPI_LONG_LONG, MPI_COMM_WORLD);
+    MPI_Alltoall(sendCounts, 1, MPI_INT, recvCounts, 1, MPI_INT, MPI_COMM_WORLD);
 
-    int tamOutput = 0;
-    for (int i = 0; i < nTotal; i++) {
-        if (received[i] != -1) {
-            Output[tamOutput] = received[i];
-            tamOutput++;
-        }
+    recvDispls[0] = 0;
+    for (int i = 1; i < np; i++) {
+        recvDispls[i] = recvDispls[i - 1] + recvCounts[i - 1];
     }
 
-    *nO = tamOutput;
+    int totalRecv = recvDispls[np - 1] + recvCounts[np - 1];
+    long long *recvBuffer = malloc(totalRecv * sizeof(long long));
 
-    free(processPos);
-    free(processResult);
-    free(received);
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Alltoallv(sendBuffer, sendCounts, sendDispls, MPI_LONG_LONG,
+                  recvBuffer, recvCounts, recvDispls, MPI_LONG_LONG, MPI_COMM_WORLD);
+
+    *nO = totalRecv;
+    memcpy(Output, recvBuffer, totalRecv * sizeof(long long));
+
+    free(sendBuffer);
+    free(recvBuffer);
+    free(sendCounts);
+    free(sendDispls);
+    free(recvCounts);
+    free(recvDispls);
 }
+
 
 int main(int argc, char *argv[]) {
     int verify, debug = 0;
