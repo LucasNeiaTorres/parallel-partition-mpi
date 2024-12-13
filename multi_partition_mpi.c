@@ -95,6 +95,8 @@ void multi_partition_mpi( long long *Input, int n, long long *P, int np, long lo
 
     MPI_Alltoall(processPos, n, MPI_LONG_LONG, received, n, MPI_LONG_LONG, MPI_COMM_WORLD);
 
+    printf("print dps do all to all: %d\n", nTotal);
+
     int tamOutput = 0;
     for (int i = 0; i < nTotal; i++) {
         if (received[i] != -1) {
